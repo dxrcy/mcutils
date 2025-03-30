@@ -71,6 +71,7 @@ fn main() {
                 .expect("Failed to open file");
             write_file(&mut file, &chunk).expect("Failed to write file");
             let size = origin.size_between(bound);
+            let origin = origin.min(bound);
             println!("Successfully saved {:?} chunk at {}.", size, origin);
         }
 
