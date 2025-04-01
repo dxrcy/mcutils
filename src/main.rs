@@ -3,7 +3,7 @@ use std::io::{self, Read as _, Write as _};
 use std::{error, fmt};
 
 use clap::{Parser, Subcommand};
-use mcrs::chunk::Size;
+use mcrs::Size;
 use mcrs::{Block, Chunk, Connection, Coordinate};
 
 #[derive(Debug, Parser)]
@@ -70,9 +70,11 @@ fn main() {
                 .open(filename)
                 .expect("Failed to open file");
             write_file(&mut file, &chunk).expect("Failed to write file");
-            let size = origin.size_between(bound);
-            let origin = origin.min(bound);
-            println!("Successfully saved {:?} chunk at {}.", size, origin);
+            println!(
+                "Successfully saved {:?} chunk at {}.",
+                chunk.size(),
+                chunk.origin(),
+            );
         }
 
         Command::Load { filename } => {
@@ -81,11 +83,22 @@ fn main() {
                 .open(filename)
                 .expect("Failed to open file");
             let entries = read_file(&mut file).expect("Failed to read file");
+
             let origin = entries.origin();
             let size = entries.size();
+
+            let chunk = mc
+                .get_blocks(entries.origin(), entries.bound())
+                .expect("Failed to get blocks");
+
             for entry in entries {
                 let (coord, block) = entry.expect("Failed to read file");
-                mc.set_block(coord, block).expect("Failed to set block");
+                let current_block = chunk
+                    .get_worldspace(coord)
+                    .expect("Chunk should contain coordinate");
+                if block != current_block {
+                    mc.set_block(coord, block).expect("Failed to set block");
+                }
             }
             println!("Successfully loaded {:?} chunk at {}.", size, origin);
         }
@@ -138,6 +151,9 @@ impl<'a> BlockReader<'a> {
     pub fn size(&self) -> Size {
         self.size
     }
+    pub fn bound(&self) -> Coordinate {
+        self.origin + self.size
+    }
 }
 
 impl<'a> Iterator for BlockReader<'a> {
@@ -158,7 +174,7 @@ impl<'a> Iterator for BlockReader<'a> {
         let y = self.index / self.size.x / self.size.z;
         let x = self.index / self.size.z % self.size.x;
         let z = self.index % self.size.z;
-        let coordinate = self.origin + Coordinate::new(x as i32, y as i32, z as i32);
+        let coordinate = self.origin + (x as i32, y as i32, z as i32);
 
         self.index += 1;
         Some(Ok((coordinate, block)))

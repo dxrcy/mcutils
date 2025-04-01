@@ -113,7 +113,7 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 [[package]]
 name = "mcrs"
 version = "0.1.1"
-source = "git+https://github.com/dxrcy/mcrs#d70d86b71210e05f91f146e130d4963de5df65f6"
+source = "git+https://github.com/dxrcy/mcrs#4c426d0b9e31613804b38092008b20917fe6eaac"
 
 [[package]]
 name = "mcutils"
