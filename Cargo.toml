@@ -2,6 +2,13 @@
 name = "mcutils"
 version = "0.1.0"
 edition = "2024"
+description = "A set of CLI tools to interface with Minecraft"
+authors = ["darcy"]
+license = "GPL-3.0"
+documentation = "https://docs.rs/mcutils/latest/mcutils"
+repository = "https://github.com/dxrcy/mcutils"
+keywords = ["minecraft", "api", "mcrs"]
+exclude = ["target"]
 
 [dependencies]
 clap = { version = "4.5.34", features = ["derive"] }
