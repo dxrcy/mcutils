@@ -1,58 +1,18 @@
+mod args;
+
 use std::fs::{self, File};
 use std::io::{self, Read as _, Write as _};
-use std::{error, fmt};
 
-use clap::{Parser, Subcommand};
-use mcrs::Size;
-use mcrs::{Block, Chunk, Connection, Coordinate};
+use clap::Parser;
+use mcrs::chunk::ChunkStream;
+use mcrs::{Block, Connection, Coordinate, Error, Size};
 
-#[derive(Debug, Parser)]
-#[command(author, version, about)]
-struct Args {
-    #[command(subcommand)]
-    command: Command,
-}
+use crate::args::Command;
 
-#[derive(Debug, Subcommand)]
-enum Command {
-    Save {
-        filename: String,
-        #[arg(value_parser = parse_coordinate)]
-        origin: Coordinate,
-        #[arg(value_parser = parse_coordinate)]
-        bound: Coordinate,
-    },
+type Result<T> = std::result::Result<T, Error>;
 
-    Load {
-        filename: String,
-    },
-}
-
-#[derive(Debug)]
-struct ParseCoordinateError;
-impl error::Error for ParseCoordinateError {}
-impl fmt::Display for ParseCoordinateError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Must be of the form `x,y,z`")
-    }
-}
-
-fn parse_coordinate(arg: &str) -> Result<Coordinate, ParseCoordinateError> {
-    let mut parts = arg.split(',').map(|part| part.parse::<i32>().ok());
-    let Some(x) = parts.next().flatten() else {
-        return Err(ParseCoordinateError);
-    };
-    let Some(y) = parts.next().flatten() else {
-        return Err(ParseCoordinateError);
-    };
-    let Some(z) = parts.next().flatten() else {
-        return Err(ParseCoordinateError);
-    };
-    Ok(Coordinate { x, y, z })
-}
-
-fn main() {
-    let args = Args::parse();
+fn main() -> Result<()> {
+    let args = args::Args::parse();
 
     let mut mc = Connection::new().expect("Failed to connect to MineCraft server");
 
@@ -62,14 +22,15 @@ fn main() {
             origin,
             bound,
         } => {
-            let chunk = mc.get_blocks(origin, bound).expect("Failed to get blocks");
             let mut file = fs::OpenOptions::new()
                 .create(true)
                 .write(true)
                 .truncate(true)
-                .open(filename)
-                .expect("Failed to open file");
-            write_file(&mut file, &chunk).expect("Failed to write file");
+                .open(filename)?;
+
+            let mut chunk = mc.get_blocks_stream(origin, bound)?;
+            write_file(&mut file, &mut chunk)?;
+
             println!(
                 "Successfully saved {:?} chunk at {}.",
                 chunk.size(),
@@ -78,37 +39,32 @@ fn main() {
         }
 
         Command::Load { filename } => {
-            let mut file = fs::OpenOptions::new()
-                .read(true)
-                .open(filename)
-                .expect("Failed to open file");
-            let entries = read_file(&mut file).expect("Failed to read file");
+            let mut file = fs::OpenOptions::new().read(true).open(filename)?;
+            let entries = read_file(&mut file)?;
 
-            let origin = entries.origin();
-            let size = entries.size();
-
-            let chunk = mc
-                .get_blocks(entries.origin(), entries.bound())
-                .expect("Failed to get blocks");
+            let (origin, size) = (entries.origin(), entries.size());
+            let chunk = mc.get_blocks(origin, entries.bound())?;
 
             for entry in entries {
-                let (coord, block) = entry.expect("Failed to read file");
+                let (coord, block) = entry?;
                 let current_block = chunk
                     .get_worldspace(coord)
                     .expect("Chunk should contain coordinate");
                 if block != current_block {
-                    mc.set_block(coord, block).expect("Failed to set block");
+                    mc.set_block(coord, block)?;
                 }
             }
             println!("Successfully loaded {:?} chunk at {}.", size, origin);
         }
     }
+
+    Ok(())
 }
 
 const MAGIC_NUMBER: u16 = 0xa3f9;
 const VERSION: u16 = 0x01_00;
 
-fn write_file(file: &mut File, chunk: &Chunk) -> io::Result<()> {
+fn write_file(file: &mut File, chunk: &mut ChunkStream<'_>) -> Result<()> {
     file.write_all(&MAGIC_NUMBER.to_le_bytes())?;
     file.write_all(&VERSION.to_le_bytes())?;
 
@@ -120,7 +76,7 @@ fn write_file(file: &mut File, chunk: &Chunk) -> io::Result<()> {
     file.write_all(&chunk.size().y.to_le_bytes())?;
     file.write_all(&chunk.size().z.to_le_bytes())?;
 
-    for item in chunk.iter() {
+    while let Some(item) = chunk.next()? {
         file.write_all(&item.block().id.to_le_bytes())?;
         file.write_all(&item.block().modifier.to_le_bytes())?;
     }
