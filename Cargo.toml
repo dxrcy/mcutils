@@ -5,6 +5,6 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.34", features = ["derive"] }
-# mcrs = "0.1.1"
+mcrs = "0.2.0"
 # mcrs = { path = "../mcrs" }
-mcrs = { git = "https://github.com/dxrcy/mcrs" }
+# mcrs = { git = "https://github.com/dxrcy/mcrs" }
