@@ -1,9 +1,8 @@
 use std::io::{self, Read, Write};
 
+use anyhow::{Result, bail};
 use mcrs::chunk::ChunkStream;
-use mcrs::{Block, Coordinate, Error, Size};
-
-type Result<T> = std::result::Result<T, Error>;
+use mcrs::{Block, Coordinate, Size};
 
 const MAGIC_NUMBER: u16 = 0xa3f9;
 const VERSION: u16 = 0x01_00;
@@ -28,7 +27,7 @@ pub fn write_data(file: &mut impl Write, chunk: &mut ChunkStream<'_>) -> Result<
     Ok(())
 }
 
-pub fn read_data<R: Read>(file: &mut R) -> io::Result<BlockReader<R>> {
+pub fn read_data<R: Read>(file: &mut R) -> Result<BlockReader<R>> {
     check_data_metadata(file)?;
 
     let x = read_i32(file)?;
@@ -73,17 +72,17 @@ impl<'a, R> BlockReader<'a, R> {
 }
 
 impl<'a, R: Read> Iterator for &mut BlockReader<'a, R> {
-    type Item = io::Result<(Coordinate, Block)>;
+    type Item = Result<(Coordinate, Block)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let id = match try_read_u32(self.reader) {
             Ok(Some(id)) => id,
             Ok(None) => return None,
-            Err(error) => return Some(Err(error)),
+            Err(error) => return Some(Err(error.into())),
         };
         let modifier = match read_u32(self.reader) {
             Ok(modifier) => modifier,
-            Err(error) => return Some(Err(error)),
+            Err(error) => return Some(Err(error.into())),
         };
         let block = Block::new(id, modifier);
 
@@ -94,16 +93,16 @@ impl<'a, R: Read> Iterator for &mut BlockReader<'a, R> {
     }
 }
 
-fn check_data_metadata(file: &mut impl Read) -> io::Result<()> {
+fn check_data_metadata(file: &mut impl Read) -> Result<()> {
     let magic_number = read_u16(file)?;
     if magic_number != MAGIC_NUMBER {
-        panic!("Invalid file format");
+        bail!("Invalid file format (signature does not match)");
     }
     let version = read_u16(file)?;
     if version < VERSION {
-        panic!("Outdated file format");
+        bail!("Outdated file format (try using an older version of mcutils)");
     } else if version > VERSION {
-        panic!("Outdated program");
+        bail!("Outdated program (try updating mcutils)");
     }
     Ok(())
 }
@@ -126,14 +125,14 @@ fn read_u32(file: &mut impl Read) -> io::Result<u32> {
     Ok(u32::from_le_bytes(buf))
 }
 
-fn try_read_u32(file: &mut impl Read) -> io::Result<Option<u32>> {
+fn try_read_u32(file: &mut impl Read) -> Result<Option<u32>> {
     let mut buf = [0u8; 4];
     let bytes_read = file.read(&mut buf)?;
     if bytes_read == 0 {
         return Ok(None);
     }
     if bytes_read < 4 {
-        return Err(io::Error::from(io::ErrorKind::UnexpectedEof));
+        bail!("Truncated data in file");
     }
     Ok(Some(u32::from_le_bytes(buf)))
 }

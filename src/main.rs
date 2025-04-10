@@ -3,13 +3,12 @@ mod args;
 use std::fs;
 use std::io;
 
+use anyhow::Result;
 use clap::Parser;
-use mcrs::{Connection, Error};
+use mcrs::Connection;
 
 use crate::args::Command;
 use mcutils::{read_data, write_data};
-
-type Result<T> = std::result::Result<T, Error>;
 
 fn main() -> Result<()> {
     let args = args::Args::parse();

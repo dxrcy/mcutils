@@ -53,6 +53,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.97"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcfed56ad506cb2c684a14971b8861fdc3baaaae314b9e5f9bb532cbe3ba7a4f"
+
+[[package]]
 name = "clap"
 version = "4.5.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -119,6 +125,7 @@ source = "git+https://github.com/dxrcy/mcrs#166cf8aa50dd7966d42aa41add912f59a1e8
 name = "mcutils"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap",
  "mcrs",
 ]
