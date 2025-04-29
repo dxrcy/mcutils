@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::io::{self, Read, Write};
 
 use anyhow::{Result, bail};
@@ -71,14 +72,14 @@ impl<'a, R> BlockReader<'a, R> {
     }
 }
 
-impl<'a, R: Read> Iterator for &mut BlockReader<'a, R> {
+impl<R: Read> Iterator for &mut BlockReader<'_, R> {
     type Item = Result<(Coordinate, Block)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let id = match try_read_u32(self.reader) {
             Ok(Some(id)) => id,
             Ok(None) => return None,
-            Err(error) => return Some(Err(error.into())),
+            Err(error) => return Some(Err(error)),
         };
         let modifier = match read_u32(self.reader) {
             Ok(modifier) => modifier,
@@ -99,12 +100,11 @@ fn check_data_metadata(file: &mut impl Read) -> Result<()> {
         bail!("Invalid file format (signature does not match)");
     }
     let version = read_u16(file)?;
-    if version < VERSION {
-        bail!("Outdated file format (try using an older version of mcutils)");
-    } else if version > VERSION {
-        bail!("Outdated program (try updating mcutils)");
+    match version.cmp(&VERSION) {
+        Ordering::Equal => Ok(()),
+        Ordering::Less => bail!("Outdated file format (try using an older version of mcutils)"),
+        Ordering::Greater => bail!("Outdated program (try updating mcutils)"),
     }
-    Ok(())
 }
 
 fn read_u16(file: &mut impl Read) -> io::Result<u16> {
