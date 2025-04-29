@@ -12,6 +12,18 @@ pub struct Args {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Clear a 3D block region (set every block to air)
+    ///
+    /// Order of bounding coordinates do not matter; they will be normalized
+    Clear {
+        /// First corner of 3D block region
+        #[arg(value_parser = parse_coordinate)]
+        origin: Coordinate,
+        /// Second corner of 3D block region
+        #[arg(value_parser = parse_coordinate)]
+        bound: Coordinate,
+    },
+
     /// Store a 3D block region to a file
     ///
     /// File will include coordinates and block data in a binary format

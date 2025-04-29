@@ -5,6 +5,7 @@ use std::io;
 
 use anyhow::Result;
 use clap::Parser;
+use mcrs::Block;
 use mcrs::Connection;
 
 use crate::args::Command;
@@ -16,6 +17,24 @@ fn main() -> Result<()> {
     let mut mc = Connection::new().expect("Failed to connect to Minecraft server");
 
     match args.command {
+        Command::Clear { origin, bound } => {
+            let chunk = mc.get_blocks(origin, bound)?;
+            let size = origin.size_between(bound);
+
+            for i in 0..size.volume() {
+                let coord = origin + size.index_to_offset(i);
+                let block = Block::AIR;
+                let current_block = chunk
+                    .get_worldspace(coord)
+                    .expect("Chunk should contain coordinate");
+                if block != current_block {
+                    mc.set_block(coord, block)?;
+                }
+            }
+
+            println!("Successfully cleared {:?} chunk at {}.", size, origin);
+        }
+
         Command::Save {
             filename,
             origin,
