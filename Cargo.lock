@@ -124,7 +124,7 @@ checksum = "b0470fc9f3b018551cda329c82dc55d61a64648647e2bb23130a15da280bdc6f"
 
 [[package]]
 name = "mcutils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
