@@ -13,6 +13,6 @@ exclude = ["target"]
 [dependencies]
 clap = { version = "4.5.34", features = ["derive"] }
 anyhow = "1.0.97"
-mcrs = "0.2.1"
+mcrs = "0.3.0"
 # mcrs = { path = "../mcrs" }
 # mcrs = { git = "https://github.com/dxrcy/mcrs" }
