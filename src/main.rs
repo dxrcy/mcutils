@@ -5,8 +5,7 @@ use std::io;
 
 use anyhow::Result;
 use clap::Parser;
-use mcrs::Block;
-use mcrs::Connection;
+use mcrs::{Block, Connection};
 
 use crate::args::Command;
 use mcutils::{read_data, write_data};

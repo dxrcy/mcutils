@@ -69,5 +69,8 @@ fn parse_coordinate(arg: &str) -> Result<Coordinate, ParseCoordinateError> {
     let Some(z) = parts.next().flatten() else {
         return Err(ParseCoordinateError);
     };
+    if parts.next().is_some() {
+        return Err(ParseCoordinateError);
+    }
     Ok(Coordinate { x, y, z })
 }
