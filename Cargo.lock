@@ -118,9 +118,9 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
 name = "mcrs"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d07a28923451aeb87ad177e530dc374ddeb024fc96c041d627554f9e33b6133"
+checksum = "b61d1cc47aafd40f49528c8390d28907e1423b61fa6ef376bf4d07af2d6bdb7a"
 
 [[package]]
 name = "mcutils"
