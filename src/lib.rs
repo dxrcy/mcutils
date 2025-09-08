@@ -28,7 +28,7 @@ pub fn write_data(file: &mut impl Write, chunk: &mut ChunkStream<'_>) -> Result<
     Ok(())
 }
 
-pub fn read_data<R: Read>(file: &mut R) -> Result<BlockReader<R>> {
+pub fn read_data<R: Read>(file: &mut R) -> Result<BlockReader<'_, R>> {
     check_data_metadata(file)?;
 
     let x = read_i32(file)?;
