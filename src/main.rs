@@ -5,7 +5,7 @@ use std::io;
 
 use anyhow::Result;
 use clap::Parser;
-use mcrs::{Block, Connection};
+use mcrs::{Block, Connection, Coordinate};
 
 use crate::args::Command;
 use mcutils::{read_data, write_data};
@@ -17,6 +17,8 @@ fn main() -> Result<()> {
 
     match args.command {
         Command::Clear { origin, bound } => {
+            let (origin, bound) = sort_corners(origin, bound);
+
             let chunk = mc.get_blocks(origin, bound)?;
             let size = origin.size_between(bound);
 
@@ -39,6 +41,8 @@ fn main() -> Result<()> {
             origin,
             bound,
         } => {
+            let (origin, bound) = sort_corners(origin, bound);
+
             let file = fs::OpenOptions::new()
                 .create(true)
                 .write(true)
@@ -83,4 +87,8 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn sort_corners(a: Coordinate, b: Coordinate) -> (Coordinate, Coordinate) {
+    (a.min(b), a.max(b))
 }
